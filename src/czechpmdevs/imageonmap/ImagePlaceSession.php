@@ -180,43 +180,48 @@ class ImagePlaceSession implements Listener {
 				if($pattern->getFacing() === Facing::WEST) {
 					for($x = 0; $x <= $width; ++$x) {
 						for($y = 0; $y <= $height; ++$y) {
-							$blocks[] = $getItemFrame($minX, $minY + $y, $minZ + $x)
-								->setFramedItem(FilledMapItemRegistry::FILLED_MAP()->setMapId($this->plugin->getImageFromFile($this->imageFile, $width + 1, $height + 1, $x, $height - $y)))
-								->setHasMap(true);
+								$mapId = $this->plugin->getImageFromFile($this->imageFile, $width + 1, $height + 1, $x, $height - $y);
+								$item = FilledMapItemRegistry::FILLED_MAP()->setMapId($mapId);
+								$blocks[] = $getItemFrame($minX, $minY + $y, $minZ + $x)
+									->setFramedItem($item)
+									->setHasMap(true);
+								$this->plugin->getLogger()->debug("Placed map $mapId at ({$minX}, {$minY + $y}, {$minZ + $x})");
+							}
+						}
+					} else {
+						for($x = 0; $x <= $width; ++$x) {
+							for($y = 0; $y <= $height; ++$y) {
+								$mapId = $this->plugin->getImageFromFile($this->imageFile, $width + 1, $height + 1, $x, $height - $y);
+								$item = FilledMapItemRegistry::FILLED_MAP()->setMapId($mapId);
+								$blocks[] = $getItemFrame($minX, $minY + $y, $maxZ - $x)
+									->setFramedItem($item)
+									->setHasMap(true);
+								$this->plugin->getLogger()->debug("Placed map $mapId at ({$minX}, {$minY + $y}, {$maxZ - $x})");
+							}
 						}
 					}
 				} else {
-					for($x = 0; $x <= $width; ++$x) {
-						for($y = 0; $y <= $height; ++$y) {
-							$blocks[] = $getItemFrame($minX, $minY + $y, $maxZ - $x)
-								->setFramedItem(FilledMapItemRegistry::FILLED_MAP()->setMapId($this->plugin->getImageFromFile($this->imageFile, $width + 1, $height + 1, $x, $height - $y)))
-								->setHasMap(true);
+					$width = $maxX - $minX;
+					if($pattern->getFacing() === Facing::SOUTH) {
+						for($x = 0; $x <= $width; ++$x) {
+							for($y = 0; $y <= $height; ++$y) {
+								$mapId = $this->plugin->getImageFromFile($this->imageFile, $width + 1, $height + 1, $x, $height - $y);
+								$item = FilledMapItemRegistry::FILLED_MAP()->setMapId($mapId);
+								$blocks[] = $getItemFrame($minX + $x, $minY + $y, $minZ)
+									->setFramedItem($item)
+									->setHasMap(true);
+								$this->plugin->getLogger()->debug("Placed map $mapId at ({$minX + $x}, {$minY + $y}, {$minZ})");
+							}
 						}
-					}
-				}
-			} else {
-				$width = $maxX - $minX;
-				if($pattern->getFacing() === Facing::SOUTH) {
-					for($x = 0; $x <= $width; ++$x) {
-						for($y = 0; $y <= $height; ++$y) {
-							$blocks[] = $getItemFrame($minX + $x, $minY + $y, $minZ)
-								->setFramedItem(FilledMapItemRegistry::FILLED_MAP()->setMapId($this->plugin->getImageFromFile($this->imageFile, $width + 1, $height + 1, $x, $height - $y)))
-								->setHasMap(true);
-						}
-					}
-				} else {
-					for($x = 0; $x <= $width; ++$x) {
-						for($y = 0; $y <= $height; ++$y) {
-							$blocks[] = $getItemFrame($maxX - $x, $minY + $y, $minZ)
-								->setFramedItem(FilledMapItemRegistry::FILLED_MAP()->setMapId($this->plugin->getImageFromFile($this->imageFile, $width + 1, $height + 1, $x, $height - $y)))
-								->setHasMap(true);
-						}
-					}
-				}
-			}
-
-			foreach($blocks as $block) {
-				$world->setBlock($block->getPosition(), $block);
+					} else {
+						for($x = 0; $x <= $width; ++$x) {
+							for($y = 0; $y <= $height; ++$y) {
+								$mapId = $this->plugin->getImageFromFile($this->imageFile, $width + 1, $height + 1, $x, $height - $y);
+								$item = FilledMapItemRegistry::FILLED_MAP()->setMapId($mapId);
+								$blocks[] = $getItemFrame($maxX - $x, $minY + $y, $minZ)
+									->setFramedItem($item)
+									->setHasMap(true);
+								$this->plugin->getLogger()->debug("Placed map $mapId at ({$maxX - $x}, {$minY + $y}, {$minZ})");
 			}
 
 			// Send map data packets to ALL players in the world so everyone sees the image

@@ -102,12 +102,15 @@ class ImageOnMap extends PluginBase implements Listener {
 			return;
 		}
 
+		$this->getLogger()->debug("MapInfoRequestPacket received for mapId: {$packet->mapId} from {$event->getOrigin()->getDisplayName()}");
+
 		if(!array_key_exists($packet->mapId, $this->cachedMaps)) {
+			$this->getLogger()->debug("Unknown map id {$packet->mapId}, sending BlankImage");
 			$event->getOrigin()->sendDataPacket(BlankImage::get()->getPacket($packet->mapId));
-			$this->getLogger()->debug("Unknown map id $packet->mapId received from {$event->getOrigin()->getDisplayName()}");
 			return;
 		}
 
+		$this->getLogger()->debug("Sending cached map {$packet->mapId}");
 		$event->getOrigin()->sendDataPacket($this->getCachedMap($packet->mapId)->getPacket($packet->mapId));
 	}
 
