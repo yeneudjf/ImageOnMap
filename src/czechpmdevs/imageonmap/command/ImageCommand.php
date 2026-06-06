@@ -95,13 +95,13 @@ class ImageCommand extends Command implements PluginOwned {
 				$plugin = $this->getOwningPlugin();
 				$count = $plugin->getCachedMapsCount();
 				$sender->sendMessage("§2--- §fImageOnMap Cache Info §2---\n" .
-					"§2Cached maps: §f$count\n" .
+					"§2Cached maps: §f{$count}\n" .
 					"§2Type §l/img clear-cache§r§2 to free RAM");
 				break;
 			case "clear-cache":
 				$plugin = $this->getOwningPlugin();
 				$count = $plugin->clearCachedMaps();
-				$sender->sendMessage("§aCleared §f$count§a cached maps from memory.");
+				$sender->sendMessage("§aCleared §f{$count}§a cached maps from memory.");
 				break;
 			case "obtain":
 			case "o":
