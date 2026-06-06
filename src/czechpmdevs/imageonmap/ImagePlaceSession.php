@@ -219,14 +219,19 @@ class ImagePlaceSession implements Listener {
 				$world->setBlock($block->getPosition(), $block);
 			}
 
-			// Send map data packets to the client so the images appear
+			// Send map data packets to ALL players in the world so everyone sees the image
 			$sentMaps = [];
 			foreach($blocks as $block) {
 				if($block instanceof ItemFrame && $block->getFramedItem() !== null) {
 					$mapId = $block->getFramedItem()->getMapId();
 					if($mapId !== null && !isset($sentMaps[$mapId])) {
 						$map = $this->plugin->getCachedMap($mapId);
-						$this->player->getNetworkSession()->sendDataPacket($map->getPacket($mapId));
+						$packet = $map->getPacket($mapId);
+						
+						// Send to all players in the world
+						foreach($world->getPlayers() as $player) {
+							$player->getNetworkSession()->sendDataPacket($packet);
+						}
 						$sentMaps[$mapId] = true;
 					}
 				}
