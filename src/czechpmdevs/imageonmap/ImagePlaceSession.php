@@ -154,90 +154,120 @@ class ImagePlaceSession implements Listener {
 
 		$getItemFrame = function(int $x, int $y, int $z) use ($itemFrame, $world): ItemFrame {
 			$block = $world->getBlockAt($x, $y, $z, true, false);
-			if($block instanceof ItemFrame) {
-				return $block;
+			if(!($block instanceof ItemFrame)) {
+				// Place an empty itemframe first
+				$world->setBlockAt($x, $y, $z, $itemFrame);
+				$block = $world->getBlockAt($x, $y, $z, true, false);
+				if(!$block instanceof ItemFrame) {
+					throw new AssumptionFailedError("Block must be item frame");
+				}
 			}
-
-			$world->setBlockAt($x, $y, $z, $itemFrame);
-			$block = $world->getBlockAt($x, $y, $z, true, false);
-			if(!$block instanceof ItemFrame) {
-				throw new AssumptionFailedError("Block must be item frame");
-			}
-
 			return $block;
 		};
 
 		/** @var ItemFrame $pattern */
 		$pattern = $world->getBlock($this->secondPosition);
 
-		/** @var Block[] $blocks */
-		$blocks = [];
-
 		try {
 			$height = $maxY - $minY;
+			$sentMaps = [];
+			
 			if($minX === $maxX) {
 				$width = $maxZ - $minZ;
 				if($pattern->getFacing() === Facing::WEST) {
 					for($x = 0; $x <= $width; ++$x) {
 						for($y = 0; $y <= $height; ++$y) {
-								$mapId = $this->plugin->getImageFromFile($this->imageFile, $width + 1, $height + 1, $x, $height - $y);
-								$item = FilledMapItemRegistry::FILLED_MAP()->setMapId($mapId);
-								$blocks[] = $getItemFrame($minX, $minY + $y, $minZ + $x)
-									->setFramedItem($item)
-									->setHasMap(true);
-								$this->plugin->getLogger()->debug("Placed map $mapId at ({$minX}, {$minY + $y}, {$minZ + $x})");
+							$mapId = $this->plugin->getImageFromFile($this->imageFile, $width + 1, $height + 1, $x, $height - $y);
+							$item = FilledMapItemRegistry::FILLED_MAP()->setMapId($mapId);
+							$frame = $getItemFrame($minX, $minY + $y, $minZ + $x);
+							$frame->setFramedItem($item)->setHasMap(true);
+							
+							// Resync the block
+							$world->setBlockAt($minX, $minY + $y, $minZ + $x, $frame);
+							
+							// Send map data to all players
+							if(!isset($sentMaps[$mapId])) {
+								$map = $this->plugin->getCachedMap($mapId);
+								$packet = $map->getPacket($mapId);
+								foreach($world->getPlayers() as $player) {
+									$player->getNetworkSession()->sendDataPacket($packet);
+								}
+								$sentMaps[$mapId] = true;
 							}
-						}
-					} else {
-						for($x = 0; $x <= $width; ++$x) {
-							for($y = 0; $y <= $height; ++$y) {
-								$mapId = $this->plugin->getImageFromFile($this->imageFile, $width + 1, $height + 1, $x, $height - $y);
-								$item = FilledMapItemRegistry::FILLED_MAP()->setMapId($mapId);
-								$blocks[] = $getItemFrame($minX, $minY + $y, $maxZ - $x)
-									->setFramedItem($item)
-									->setHasMap(true);
-								$this->plugin->getLogger()->debug("Placed map $mapId at ({$minX}, {$minY + $y}, {$maxZ - $x})");
-							}
+							$this->plugin->getLogger()->debug("Placed map $mapId at ({$minX}, {$minY + $y}, {$minZ + $x})");
 						}
 					}
 				} else {
-					$width = $maxX - $minX;
-					if($pattern->getFacing() === Facing::SOUTH) {
-						for($x = 0; $x <= $width; ++$x) {
-							for($y = 0; $y <= $height; ++$y) {
-								$mapId = $this->plugin->getImageFromFile($this->imageFile, $width + 1, $height + 1, $x, $height - $y);
-								$item = FilledMapItemRegistry::FILLED_MAP()->setMapId($mapId);
-								$blocks[] = $getItemFrame($minX + $x, $minY + $y, $minZ)
-									->setFramedItem($item)
-									->setHasMap(true);
-								$this->plugin->getLogger()->debug("Placed map $mapId at ({$minX + $x}, {$minY + $y}, {$minZ})");
+					for($x = 0; $x <= $width; ++$x) {
+						for($y = 0; $y <= $height; ++$y) {
+							$mapId = $this->plugin->getImageFromFile($this->imageFile, $width + 1, $height + 1, $x, $height - $y);
+							$item = FilledMapItemRegistry::FILLED_MAP()->setMapId($mapId);
+							$frame = $getItemFrame($minX, $minY + $y, $maxZ - $x);
+							$frame->setFramedItem($item)->setHasMap(true);
+							
+							// Resync the block
+							$world->setBlockAt($minX, $minY + $y, $maxZ - $x, $frame);
+							
+							// Send map data to all players
+							if(!isset($sentMaps[$mapId])) {
+								$map = $this->plugin->getCachedMap($mapId);
+								$packet = $map->getPacket($mapId);
+								foreach($world->getPlayers() as $player) {
+									$player->getNetworkSession()->sendDataPacket($packet);
+								}
+								$sentMaps[$mapId] = true;
 							}
+							$this->plugin->getLogger()->debug("Placed map $mapId at ({$minX}, {$minY + $y}, {$maxZ - $x})");
 						}
-					} else {
-						for($x = 0; $x <= $width; ++$x) {
-							for($y = 0; $y <= $height; ++$y) {
-								$mapId = $this->plugin->getImageFromFile($this->imageFile, $width + 1, $height + 1, $x, $height - $y);
-								$item = FilledMapItemRegistry::FILLED_MAP()->setMapId($mapId);
-								$blocks[] = $getItemFrame($maxX - $x, $minY + $y, $minZ)
-									->setFramedItem($item)
-									->setHasMap(true);
-								$this->plugin->getLogger()->debug("Placed map $mapId at ({$maxX - $x}, {$minY + $y}, {$minZ})");
-			}
-
-			// Send map data packets to ALL players in the world so everyone sees the image
-			$sentMaps = [];
-			foreach($blocks as $block) {
-				if($block instanceof ItemFrame && $block->getFramedItem() !== null) {
-					$mapId = $block->getFramedItem()->getMapId();
-					if($mapId !== null && !isset($sentMaps[$mapId])) {
-						$map = $this->plugin->getCachedMap($mapId);
-						$packet = $map->getPacket($mapId);
-						
-						// Send to all players in the world
-						foreach($world->getPlayers() as $player) {
-							$player->getNetworkSession()->sendDataPacket($packet);
+					}
+				}
+			} else {
+				$width = $maxX - $minX;
+				if($pattern->getFacing() === Facing::SOUTH) {
+					for($x = 0; $x <= $width; ++$x) {
+						for($y = 0; $y <= $height; ++$y) {
+							$mapId = $this->plugin->getImageFromFile($this->imageFile, $width + 1, $height + 1, $x, $height - $y);
+							$item = FilledMapItemRegistry::FILLED_MAP()->setMapId($mapId);
+							$frame = $getItemFrame($minX + $x, $minY + $y, $minZ);
+							$frame->setFramedItem($item)->setHasMap(true);
+							
+							// Resync the block
+							$world->setBlockAt($minX + $x, $minY + $y, $minZ, $frame);
+							
+							// Send map data to all players
+							if(!isset($sentMaps[$mapId])) {
+								$map = $this->plugin->getCachedMap($mapId);
+								$packet = $map->getPacket($mapId);
+								foreach($world->getPlayers() as $player) {
+									$player->getNetworkSession()->sendDataPacket($packet);
+								}
+								$sentMaps[$mapId] = true;
+							}
+							$this->plugin->getLogger()->debug("Placed map $mapId at ({$minX + $x}, {$minY + $y}, {$minZ})");
 						}
-						$sentMaps[$mapId] = true;
+					}
+				} else {
+					for($x = 0; $x <= $width; ++$x) {
+						for($y = 0; $y <= $height; ++$y) {
+							$mapId = $this->plugin->getImageFromFile($this->imageFile, $width + 1, $height + 1, $x, $height - $y);
+							$item = FilledMapItemRegistry::FILLED_MAP()->setMapId($mapId);
+							$frame = $getItemFrame($maxX - $x, $minY + $y, $minZ);
+							$frame->setFramedItem($item)->setHasMap(true);
+							
+							// Resync the block
+							$world->setBlockAt($maxX - $x, $minY + $y, $minZ, $frame);
+							
+							// Send map data to all players
+							if(!isset($sentMaps[$mapId])) {
+								$map = $this->plugin->getCachedMap($mapId);
+								$packet = $map->getPacket($mapId);
+								foreach($world->getPlayers() as $player) {
+									$player->getNetworkSession()->sendDataPacket($packet);
+								}
+								$sentMaps[$mapId] = true;
+							}
+							$this->plugin->getLogger()->debug("Placed map $mapId at ({$maxX - $x}, {$minY + $y}, {$minZ})");
+						}
 					}
 				}
 			}

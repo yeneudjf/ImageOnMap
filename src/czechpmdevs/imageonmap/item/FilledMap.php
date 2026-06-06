@@ -27,7 +27,7 @@ use pocketmine\item\Item;
 use pocketmine\nbt\tag\CompoundTag;
 
 class FilledMap extends Item {
-	private int $uuid;
+	private int $uuid = 0;
 
 	public function setMapId(int $uuid): self {
 		$this->uuid = $uuid;
@@ -35,7 +35,7 @@ class FilledMap extends Item {
 	}
 
 	public function getMapId(): ?int {
-		return $this->uuid ?? null;
+		return $this->uuid > 0 ? $this->uuid : null;
 	}
 
 	protected function serializeCompoundTag(CompoundTag $tag): void {
@@ -45,7 +45,7 @@ class FilledMap extends Item {
 
 	protected function deserializeCompoundTag(CompoundTag $tag): void {
 		parent::deserializeCompoundTag($tag);
-		$this->uuid = $tag->getLong("map_uuid");
+		$this->uuid = $tag->getLong("map_uuid", 0);
 	}
 
 	/**
