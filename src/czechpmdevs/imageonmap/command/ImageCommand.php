@@ -71,7 +71,9 @@ class ImageCommand extends Command implements PluginOwned {
 					"§2/img help §fShows help\n" .
 					"§2/img list §fShows available images\n" .
 					"§2/img obtain <image> [<xChunkCount> <yChunkCount> <x> <y>] §fObtains an image\n" .
-					"§2/img place <image> §fPlaces an image");
+					"§2/img place <image> §fPlaces an image\n" .
+					"§2/img info §fShows cached maps info\n" .
+					"§2/img clear-cache §fClears all cached maps from memory");
 				break;
 			case "list":
 				$files = [];
@@ -88,6 +90,18 @@ class ImageCommand extends Command implements PluginOwned {
 
 				$files = implode(", ", $files);
 				$sender->sendMessage("§aAvailable maps: $files");
+				break;
+			case "info":
+				$plugin = $this->getOwningPlugin();
+				$count = $plugin->getCachedMapsCount();
+				$sender->sendMessage("§2--- §fImageOnMap Cache Info §2---\n" .
+					"§2Cached maps: §f$count\n" .
+					"§2Type §l/img clear-cache§r§2 to free RAM");
+				break;
+			case "clear-cache":
+				$plugin = $this->getOwningPlugin();
+				$count = $plugin->clearCachedMaps();
+				$sender->sendMessage("§aCleared §f$count§a cached maps from memory.");
 				break;
 			case "obtain":
 			case "o":
@@ -133,7 +147,13 @@ class ImageCommand extends Command implements PluginOwned {
 				}
 
 				try {
-					$sender->getInventory()->addItem(FilledMapItemRegistry::FILLED_MAP()->setMapId(ImageOnMap::getInstance()->getImageFromFile($file, $xChunkCount, $yChunkCount, $xOffset, $yOffset)));
+					$mapId = ImageOnMap::getInstance()->getImageFromFile($file, $xChunkCount, $yChunkCount, $xOffset, $yOffset);
+					$sender->getInventory()->addItem(FilledMapItemRegistry::FILLED_MAP()->setMapId($mapId));
+					
+					// Send map data packet to the client so the map appears
+					$map = ImageOnMap::getInstance()->getCachedMap($mapId);
+					$sender->getNetworkSession()->sendDataPacket($map->getPacket($mapId));
+					
 					$sender->sendMessage("§aMap successfully created from the image.");
 				} catch(PermissionDeniedException) {
 					$sender->sendMessage("§cPlugin does not have permissions to access map file");

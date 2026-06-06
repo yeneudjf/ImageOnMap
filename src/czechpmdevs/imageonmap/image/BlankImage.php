@@ -29,6 +29,7 @@ use pocketmine\network\mcpe\protocol\types\MapImage;
 
 class BlankImage extends Image {
 	private static BlankImage $blankImage;
+	private static array $blankColors;
 
 	/**
 	 * @internal
@@ -54,12 +55,16 @@ class BlankImage extends Image {
 
 		$image = new BlankImage();
 
-		$image->colors = [];
-		for($x = 0; $x < 128; ++$x) {
-			for($y = 0; $y < 128; ++$y) {
-				$image->colors[$x][$y] = new Color(0, 0, 0, 0);
+		// Use lazy-loaded singleton blank color array
+		if(!isset(self::$blankColors)) {
+			self::$blankColors = [];
+			$blankColor = new Color(0, 0, 0, 0);
+			for($x = 0; $x < 128; ++$x) {
+				self::$blankColors[$x] = array_fill(0, 128, $blankColor);
 			}
 		}
+
+		$image->colors = self::$blankColors;
 
 		return self::$blankImage = $image;
 	}

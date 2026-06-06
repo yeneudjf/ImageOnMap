@@ -29,6 +29,9 @@ use function pack;
 use function unpack;
 
 class ColorSerializer {
+	/** @var array<int, Color> Cache of Color objects by ARGB value */
+	private static array $colorCache = [];
+
 	/**
 	 * @return Color[][]
 	 */
@@ -40,13 +43,15 @@ class ColorSerializer {
 		$colors = [];
 		$i = 0;
 		for($x = 0; $x < 128; ++$x) {
+			$colors[$x] = [];
 			for($y = 0; $y < 128; ++$y) {
-				$color = $data[++$i] ?? null;
-				if($color === null) {
-					ImageOnMap::getInstance()->getLogger()->debug("Pixel at $x:$y is null");
+				$colorValue = (int)($data[++$i] ?? 0);
+				
+				// Reuse Color objects from cache to reduce memory
+				if(!isset(self::$colorCache[$colorValue])) {
+					self::$colorCache[$colorValue] = Color::fromARGB($colorValue);
 				}
-
-				$colors[$x][$y] = Color::fromARGB((int)$color);
+				$colors[$x][$y] = self::$colorCache[$colorValue];
 			}
 		}
 

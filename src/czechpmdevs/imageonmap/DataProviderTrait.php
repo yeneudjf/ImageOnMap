@@ -96,4 +96,32 @@ trait DataProviderTrait {
 	public function getCachedMap(int $id): Image {
 		return $this->cachedMaps[$id];
 	}
+
+	/**
+	 * Clear all cached maps from memory
+	 * This will free up RAM but you'll need to reload images if needed
+	 */
+	public function clearCachedMaps(): int {
+		$count = count($this->cachedMaps);
+		$this->cachedMaps = [];
+		return $count;
+	}
+
+	/**
+	 * Get the count of cached maps
+	 */
+	public function getCachedMapsCount(): int {
+		return count($this->cachedMaps);
+	}
+
+	/**
+	 * Remove a specific cached map by ID
+	 */
+	public function removeCachedMap(int $id): bool {
+		if(isset($this->cachedMaps[$id])) {
+			unset($this->cachedMaps[$id]);
+			return true;
+		}
+		return false;
+	}
 }

@@ -34,7 +34,8 @@ class Image {
 	protected int $dimension = DimensionIds::OVERWORLD;
 	protected bool $isLocked = false;
 
-	protected ClientboundMapItemDataPacket $packetCache;
+	/** @var array<int, ClientboundMapItemDataPacket> Packet cache per mapId */
+	protected array $packetCache = [];
 
 	/** @var Color[][] */
 	protected array $colors;
@@ -46,8 +47,8 @@ class Image {
 	 * @internal
 	 */
 	public function getPacket(int $id): ClientboundMapItemDataPacket {
-		if(isset($this->packetCache)) {
-			return $this->packetCache;
+		if(isset($this->packetCache[$id])) {
+			return $this->packetCache[$id];
 		}
 
 		$pk = new ClientboundMapItemDataPacket();
@@ -60,7 +61,7 @@ class Image {
 		$pk->origin = new BlockPosition(0,0, 0);
 		$pk->parentMapIds[] = $id;
 
-		return $this->packetCache = $pk;
+		return $this->packetCache[$id] = $pk;
 	}
 
 	/**
