@@ -194,7 +194,7 @@ class ImagePlaceSession implements Listener {
 								}
 								$sentMaps[$mapId] = true;
 							}
-							$this->plugin->getLogger()->debug("Placed map $mapId at ({$minX}, {$minY + $y}, {$minZ + $x})");
+							$this->plugin->getLogger()->debug("Placed map $mapId at (" . $minX . ", " . ($minY + $y) . ", " . ($minZ + $x) . ")");
 						}
 					}
 				} else {
@@ -217,7 +217,7 @@ class ImagePlaceSession implements Listener {
 								}
 								$sentMaps[$mapId] = true;
 							}
-							$this->plugin->getLogger()->debug("Placed map $mapId at ({$minX}, {$minY + $y}, {$maxZ - $x})");
+							$this->plugin->getLogger()->debug("Placed map $mapId at (" . $minX . ", " . ($minY + $y) . ", " . ($maxZ - $x) . ")");
 						}
 					}
 				}
@@ -243,7 +243,7 @@ class ImagePlaceSession implements Listener {
 								}
 								$sentMaps[$mapId] = true;
 							}
-							$this->plugin->getLogger()->debug("Placed map $mapId at ({$minX + $x}, {$minY + $y}, {$minZ})");
+							$this->plugin->getLogger()->debug("Placed map $mapId at (" . ($minX + $x) . ", " . ($minY + $y) . ", " . $minZ . ")");
 						}
 					}
 				} else {
@@ -266,7 +266,7 @@ class ImagePlaceSession implements Listener {
 								}
 								$sentMaps[$mapId] = true;
 							}
-							$this->plugin->getLogger()->debug("Placed map $mapId at ({$maxX - $x}, {$minY + $y}, {$minZ})");
+							$this->plugin->getLogger()->debug("Placed map $mapId at (" . ($maxX - $x) . ", " . ($minY + $y) . ", " . $minZ . ")");
 						}
 					}
 				}
