@@ -34,6 +34,7 @@ use function file_get_contents;
 use function file_put_contents;
 use function glob;
 use function hash_file;
+use function mkdir;
 use function substr;
 
 trait DataProviderTrait {
@@ -77,6 +78,21 @@ trait DataProviderTrait {
 	}
 
 	/**
+	 * @internal
+	 */
+	public function saveCachedMap(string $path, int $id): void {
+		if(!isset($this->cachedMaps[$id])) {
+			return;
+		}
+
+		$serializer = new BigEndianNbtSerializer();
+		$map = $this->cachedMaps[$id];
+		if(!file_put_contents($file = "$path/map_$id.dat", $serializer->write(new TreeRoot($map->save())))) {
+			throw new PermissionDeniedException("Could not access file $file");
+		}
+	}
+
+	/**
 	 * @return int $id Returns id of the image loaded from file.
 	 *
 	 * @throws PermissionDeniedException When the file could not be accessed
@@ -85,6 +101,8 @@ trait DataProviderTrait {
 		$id = crc32(hash_file("md5", $file) . "$xChunkCount:$yChunkCount:$xOffset:$yOffset");
 		if(!array_key_exists($id, $this->cachedMaps)) {
 			$this->cachedMaps[$id] = ImageLoader::loadImage($file, $xChunkCount, $yChunkCount, $xOffset, $yOffset);
+			@mkdir($this->getDataFolder() . "data", 0777, true);
+			$this->saveCachedMap($this->getDataFolder() . "data", $id);
 		}
 
 		return $id;
