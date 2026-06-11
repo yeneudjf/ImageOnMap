@@ -29,7 +29,7 @@ use pocketmine\data\bedrock\item\ItemTypeNames;
 use pocketmine\data\bedrock\item\SavedItemData;
 use pocketmine\event\Listener;
 use pocketmine\event\player\PlayerJoinEvent;
-use pocketmine\event\player\PlayerTeleportEvent;
+use pocketmine\event\player\PlayerMoveEvent;
 use pocketmine\event\server\DataPacketReceiveEvent;
 use pocketmine\item\StringToItemParser;
 use pocketmine\network\mcpe\protocol\MapInfoRequestPacket;
@@ -122,8 +122,8 @@ class ImageOnMap extends PluginBase implements Listener {
 		$this->sendCachedMapsToPlayer($event->getPlayer());
 	}
 
-	public function onTeleport(PlayerTeleportEvent $event): void {
-		if($event->getFrom()->getWorld() === $event->getTo()->getWorld()) {
+	public function onMove(PlayerMoveEvent $event): void {
+		if($event->getFrom()->getWorld()->getId() === $event->getTo()->getWorld()->getId()) {
 			return;
 		}
 
