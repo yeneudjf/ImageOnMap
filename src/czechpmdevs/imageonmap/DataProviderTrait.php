@@ -30,6 +30,7 @@ use pocketmine\nbt\TreeRoot;
 use function array_key_exists;
 use function basename;
 use function crc32;
+use function file_exists;
 use function file_get_contents;
 use function file_put_contents;
 use function glob;
@@ -93,6 +94,28 @@ trait DataProviderTrait {
 	}
 
 	/**
+	 * @internal
+	 */
+	public function loadCachedMap(string $path, int $id): ?Image {
+		if(isset($this->cachedMaps[$id])) {
+			return $this->cachedMaps[$id];
+		}
+
+		$file = "$path/map_$id.dat";
+		if(!file_exists($file)) {
+			return null;
+		}
+
+		$content = file_get_contents($file);
+		if($content === false || $content === '') {
+			return null;
+		}
+
+		$serializer = new BigEndianNbtSerializer();
+		return $this->cachedMaps[$id] = Image::load($serializer->read($content)->mustGetCompoundTag());
+	}
+
+	/**
 	 * @return int $id Returns id of the image loaded from file.
 	 *
 	 * @throws PermissionDeniedException When the file could not be accessed
@@ -113,6 +136,17 @@ trait DataProviderTrait {
 	 */
 	public function getCachedMap(int $id): Image {
 		return $this->cachedMaps[$id];
+	}
+
+	/**
+	 * @internal
+	 */
+	public function getCachedMapOrLoad(int $id): ?Image {
+		if(isset($this->cachedMaps[$id])) {
+			return $this->cachedMaps[$id];
+		}
+
+		return $this->loadCachedMap($this->getDataFolder() . "data", $id);
 	}
 
 	/**

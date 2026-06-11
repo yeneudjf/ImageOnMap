@@ -28,9 +28,12 @@ use czechpmdevs\imageonmap\utils\PermissionDeniedException;
 use pocketmine\data\bedrock\item\ItemTypeNames;
 use pocketmine\data\bedrock\item\SavedItemData;
 use pocketmine\event\Listener;
+use pocketmine\event\player\PlayerJoinEvent;
+use pocketmine\event\player\PlayerTeleportEvent;
 use pocketmine\event\server\DataPacketReceiveEvent;
 use pocketmine\item\StringToItemParser;
 use pocketmine\network\mcpe\protocol\MapInfoRequestPacket;
+use pocketmine\player\Player;
 use pocketmine\plugin\DisablePluginException;
 use pocketmine\plugin\PluginBase;
 use pocketmine\scheduler\AsyncTask;
@@ -104,14 +107,36 @@ class ImageOnMap extends PluginBase implements Listener {
 
 		$this->getLogger()->debug("MapInfoRequestPacket received for mapId: {$packet->mapId} from {$event->getOrigin()->getDisplayName()}");
 
-		if(!array_key_exists($packet->mapId, $this->cachedMaps)) {
+		$map = $this->getCachedMapOrLoad($packet->mapId);
+		if($map === null) {
 			$this->getLogger()->debug("Unknown map id {$packet->mapId}, sending BlankImage");
 			$event->getOrigin()->sendDataPacket(BlankImage::get()->getPacket($packet->mapId));
 			return;
 		}
 
 		$this->getLogger()->debug("Sending cached map {$packet->mapId}");
-		$event->getOrigin()->sendDataPacket($this->getCachedMap($packet->mapId)->getPacket($packet->mapId));
+		$event->getOrigin()->sendDataPacket($map->getPacket($packet->mapId));
+	}
+
+	public function onJoin(PlayerJoinEvent $event): void {
+		$this->sendCachedMapsToPlayer($event->getPlayer());
+	}
+
+	public function onTeleport(PlayerTeleportEvent $event): void {
+		if($event->getFrom()->getWorld() === $event->getTo()->getWorld()) {
+			return;
+		}
+
+		$this->sendCachedMapsToPlayer($event->getPlayer());
+	}
+
+	public function sendCachedMapsToPlayer(Player $player): void {
+		foreach(array_keys($this->cachedMaps) as $id) {
+			$map = $this->getCachedMapOrLoad((int)$id);
+			if($map !== null) {
+				$player->getNetworkSession()->sendDataPacket($map->getPacket((int)$id));
+			}
+		}
 	}
 
 	/**
